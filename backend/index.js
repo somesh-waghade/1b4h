@@ -76,6 +76,18 @@ io.on('connection', (socket) => {
     io.to(roomId).emit('room_update', result.room);
     console.log(`${name} joined private room ${roomId}`);
 
+    // DEV MODE: If room code starts with "DEV", auto-fill remaining slots with dummy players
+    if (roomId.startsWith('DEV')) {
+      const dummyNames = ['Alice_Bot', 'Bob_Bot', 'Carol_Bot'];
+      const existingHumans = result.room.players.filter(p => !p.isAI).length;
+      const needed = 4 - existingHumans;
+      for (let i = 0; i < needed; i++) {
+        const dummyId = `DUMMY_${i}_${Date.now()}`;
+        gameState.addPlayer(roomId, dummyId, dummyNames[i] || `Player_${i + 2}`);
+      }
+      console.log(`[DEV] Auto-filled ${needed} dummy players`);
+    }
+
     // Auto-start when 4 humans are in
     if (result.room.players.filter(p => !p.isAI).length === 4) {
       startGame(roomId);
@@ -133,34 +145,46 @@ io.on('connection', (socket) => {
 
     io.to(roomId).emit('new_message', messageData);
 
-    // Trigger AI response
+    // Trigger AI response — not every message, like a real human
     const catalyst = room.players.find(p => p.isAI);
     if (catalyst && !catalyst.isBotRunning) {
-      catalyst.isBotRunning = true;
       if (!room.messages) room.messages = [];
       room.messages.push(messageData);
       if (room.messages.length > 10) room.messages.shift();
 
-      (async () => {
-        const responseText = await aiAgent.generateResponse(room.messages, room.topic, 'Catalyst');
-        await aiAgent.simulateLatency(responseText);
+      // Count how many messages since AI last spoke
+      const lastAiIdx = room.messages.map(m => m.senderId).lastIndexOf('AI_CATALYST');
+      const msgSinceLastReply = lastAiIdx === -1 ? 999 : room.messages.length - 1 - lastAiIdx;
 
-        const aiMessage = {
-          id: Date.now() + Math.random().toString(36).substr(2, 9),
-          sender: catalyst.name,
-          senderId: catalyst.id,
-          text: responseText,
-          timestamp: Date.now()
-        };
+      // Base 35% chance, boosted to 75% if AI's name is mentioned
+      const nameMentioned = message.toLowerCase().includes(catalyst.name.toLowerCase());
+      const replyChance = nameMentioned ? 0.75 : 0.35;
 
-        // Track AI message metadata too (for comparison in analytics)
-        catalyst.metrics.timestamps.push(Date.now());
-        catalyst.metrics.lengths.push(responseText.length);
+      // Don't reply if the AI just spoke (< 2 messages ago)
+      const shouldReply = msgSinceLastReply >= 2 && Math.random() < replyChance;
 
-        room.messages.push(aiMessage);
-        io.to(roomId).emit('new_message', aiMessage);
-        catalyst.isBotRunning = false;
-      })();
+      if (shouldReply) {
+        catalyst.isBotRunning = true;
+        (async () => {
+          const responseText = await aiAgent.generateResponse(room.messages, room.topic, 'Catalyst');
+          await aiAgent.simulateLatency(responseText);
+
+          const aiMessage = {
+            id: Date.now() + Math.random().toString(36).substr(2, 9),
+            sender: catalyst.name,
+            senderId: catalyst.id,
+            text: responseText,
+            timestamp: Date.now()
+          };
+
+          catalyst.metrics.timestamps.push(Date.now());
+          catalyst.metrics.lengths.push(responseText.length);
+
+          room.messages.push(aiMessage);
+          io.to(roomId).emit('new_message', aiMessage);
+          catalyst.isBotRunning = false;
+        })();
+      }
     }
   });
 
