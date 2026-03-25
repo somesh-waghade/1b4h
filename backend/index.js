@@ -46,7 +46,7 @@ function startGame(roomId) {
   io.to(roomId).emit('game_started', { room, topic });
 
   // Start 60s Discussion Timer
-  let timeLeft = 60;
+  let timeLeft = 240; // 4 minutes
   const timer = setInterval(() => {
     timeLeft--;
     io.to(roomId).emit('timer_update', timeLeft);

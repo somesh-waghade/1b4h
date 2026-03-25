@@ -15,7 +15,7 @@ function App() {
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [topic, setTopic] = useState('');
-  const [timeLeft, setTimeLeft] = useState(60);
+  const [timeLeft, setTimeLeft] = useState(240);
   const [hasVoted, setHasVoted] = useState(false);
   const [gameOverData, setGameOverData] = useState(null);
   const [queuePosition, setQueuePosition] = useState(0);
@@ -255,8 +255,8 @@ function App() {
               </div>
               <div className="text-right">
                 <p className="text-xs font-bold text-gray-600 uppercase tracking-widest mb-1">Time</p>
-                <h2 className={`text-2xl font-black font-mono ${timeLeft < 10 ? 'text-red-500 animate-pulse' : 'text-purple-400'}`}>
-                  0:{timeLeft < 10 ? `0${timeLeft}` : timeLeft}
+                <h2 className={`text-2xl font-black font-mono ${timeLeft < 30 ? 'text-red-500 animate-pulse' : 'text-purple-400'}`}>
+                  {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}
                 </h2>
               </div>
             </div>
