@@ -12,84 +12,114 @@ app.use(express.json());
 
 const server = http.createServer(app);
 const io = new Server(server, {
-  cors: {
-    origin: '*',
-    methods: ['GET', 'POST']
-  }
+  cors: { origin: '*', methods: ['GET', 'POST'] }
 });
 
 const PORT = process.env.PORT || 3001;
 
+// Reusable function to start a game when a room has 4 humans
+function startGame(roomId) {
+  const room = gameState.getRoom(roomId);
+  if (!room) return;
+
+  // Add the AI Catalyst
+  const aiPlayer = gameState.addAIPlayer(roomId);
+
+  // Assign Phantom & Innocent to humans
+  const assigned = gameState.assignHumanRoles(roomId);
+  if (!assigned) return;
+
+  const topic = gameState.startDiscussion(roomId);
+
+  // Emit roles privately to each human
+  room.players.filter(p => !p.isAI).forEach(p => {
+    const payload = { 
+      role: p.role, 
+      aiName: aiPlayer.name  // Tell humans the AI's display name
+    };
+    if (p.role === 'Phantom') {
+      payload.botAssist = aiAgent.getBotAssistPhrases();
+    }
+    io.to(p.id).emit('role_assigned', payload);
+  });
+
+  io.to(roomId).emit('game_started', { room, topic });
+
+  // Start 60s Discussion Timer
+  let timeLeft = 60;
+  const timer = setInterval(() => {
+    timeLeft--;
+    io.to(roomId).emit('timer_update', timeLeft);
+    if (timeLeft <= 0) {
+      clearInterval(timer);
+      room.phase = 'voting';
+      io.to(roomId).emit('start_voting', room);
+    }
+  }, 1000);
+}
+
 io.on('connection', (socket) => {
   console.log('A user connected:', socket.id);
 
+  // ─── PRIVATE ROOM (join with room code) ─────────────────────
   socket.on('join_room', ({ roomId, name }) => {
     let room = gameState.getRoom(roomId);
-    if (!room) {
-      room = gameState.createRoom(roomId);
-    }
-    
+    if (!room) room = gameState.createRoom(roomId);
+
     const result = gameState.addPlayer(roomId, socket.id, name);
-    if (result && result.error) {
+    if (result?.error) {
       socket.emit('error', result.error);
       return;
     }
 
     socket.join(roomId);
     io.to(roomId).emit('room_update', result.room);
-    console.log(`${name} joined room ${roomId}`);
-    
-    // Check if 5 players joined
-    if (result.room.players.length === 5) {
-      const assigned = gameState.assignRoles(roomId);
-      if (assigned) {
-        const topic = gameState.startDiscussion(roomId);
-        // Emit roles privately to each player
-        result.room.players.forEach(p => {
-           const payload = { role: p.role };
-           if (p.role === 'Phantom') {
-             payload.botAssist = aiAgent.getBotAssistPhrases();
-           }
-           io.to(p.id).emit('role_assigned', payload);
-        });
-        io.to(roomId).emit('game_started', { room: result.room, topic });
+    console.log(`${name} joined private room ${roomId}`);
 
-        // Start 60s Discussion Timer
-        let timeLeft = 60;
-        const timer = setInterval(() => {
-          timeLeft--;
-          io.to(roomId).emit('timer_update', timeLeft);
-          
-          if (timeLeft <= 0) {
-            clearInterval(timer);
-            result.room.phase = 'voting';
-            io.to(roomId).emit('start_voting', result.room);
-          }
-        }, 1000);
-      }
+    // Auto-start when 4 humans are in
+    if (result.room.players.filter(p => !p.isAI).length === 4) {
+      startGame(roomId);
     }
   });
 
-  socket.on('cast_vote', ({ roomId, targetId }) => {
-    const voteCount = gameState.castVote(roomId, socket.id, targetId);
-    const room = gameState.getRoom(roomId);
-    
-    if (voteCount === room.players.length) {
-      const results = gameState.resolveGame(roomId);
-      io.to(roomId).emit('game_over', results);
-    } else {
-      io.to(roomId).emit('vote_received', { voterId: socket.id });
+  // ─── PUBLIC MATCHMAKING ──────────────────────────────────────
+  socket.on('join_queue', ({ name }) => {
+    const queueSize = gameState.addToQueue(socket.id, name);
+    socket.emit('queue_update', { position: queueSize });
+    console.log(`${name} joined public queue (size: ${queueSize})`);
+
+    const match = gameState.tryFormPublicGame();
+    if (match) {
+      const { roomId, group } = match;
+      gameState.createRoom(roomId);
+
+      // Add all 4 queued players to the room
+      group.forEach(({ socketId, name: playerName }) => {
+        gameState.addPlayer(roomId, socketId, playerName);
+        const clientSocket = io.sockets.sockets.get(socketId);
+        if (clientSocket) {
+          clientSocket.join(roomId);
+          clientSocket.emit('match_found', { roomId });
+        }
+      });
+
+      io.to(roomId).emit('room_update', gameState.getRoom(roomId));
+      startGame(roomId);
     }
   });
 
+  socket.on('leave_queue', () => {
+    gameState.removeFromQueue(socket.id);
+  });
+
+  // ─── CHAT ────────────────────────────────────────────────────
   socket.on('send_message', ({ roomId, message }) => {
     const room = gameState.getRoom(roomId);
     if (!room) return;
-    
+
     const player = room.players.find(p => p.id === socket.id);
     if (!player) return;
 
-    // Track metadata for analytics
     player.metrics.timestamps.push(Date.now());
     player.metrics.lengths.push(message.length);
 
@@ -103,23 +133,18 @@ io.on('connection', (socket) => {
 
     io.to(roomId).emit('new_message', messageData);
 
-    // AI Logic: If a real player sent a message, check if the Catalyst should respond
-    const catalyst = room.players.find(p => p.role === 'Catalyst');
+    // Trigger AI response
+    const catalyst = room.players.find(p => p.isAI);
     if (catalyst && !catalyst.isBotRunning) {
-      // Basic check to prevent AI from infinitely responding to itself
-      // In this version, we trigger Catalyst response with a probability or on every message for testing
-      catalyst.isBotRunning = true; // Simple lock
-      
-      const chatHistory = room.messages || []; // We should probably store messages in room state
+      catalyst.isBotRunning = true;
       if (!room.messages) room.messages = [];
       room.messages.push(messageData);
-      // Keep only last 10 for context
       if (room.messages.length > 10) room.messages.shift();
 
       (async () => {
         const responseText = await aiAgent.generateResponse(room.messages, room.topic, 'Catalyst');
         await aiAgent.simulateLatency(responseText);
-        
+
         const aiMessage = {
           id: Date.now() + Math.random().toString(36).substr(2, 9),
           sender: catalyst.name,
@@ -127,7 +152,11 @@ io.on('connection', (socket) => {
           text: responseText,
           timestamp: Date.now()
         };
-        
+
+        // Track AI message metadata too (for comparison in analytics)
+        catalyst.metrics.timestamps.push(Date.now());
+        catalyst.metrics.lengths.push(responseText.length);
+
         room.messages.push(aiMessage);
         io.to(roomId).emit('new_message', aiMessage);
         catalyst.isBotRunning = false;
@@ -135,8 +164,26 @@ io.on('connection', (socket) => {
     }
   });
 
+  // ─── VOTING ──────────────────────────────────────────────────
+  socket.on('cast_vote', ({ roomId, targetId }) => {
+    const room = gameState.getRoom(roomId);
+    if (!room) return;
+
+    const voteCount = gameState.castVote(roomId, socket.id, targetId);
+    const humanCount = room.players.filter(p => !p.isAI).length;
+
+    if (voteCount >= humanCount) {
+      const results = gameState.resolveGame(roomId);
+      io.to(roomId).emit('game_over', results);
+    } else {
+      io.to(roomId).emit('vote_received', { voterId: socket.id, voteCount, total: humanCount });
+    }
+  });
+
+  // ─── DISCONNECT ──────────────────────────────────────────────
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
+    gameState.removeFromQueue(socket.id);
     const result = gameState.removePlayer(socket.id);
     if (result.removed) {
       io.to(result.roomId).emit('room_update', result.room);
