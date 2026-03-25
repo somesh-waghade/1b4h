@@ -166,8 +166,13 @@ io.on('connection', (socket) => {
       if (shouldReply) {
         catalyst.isBotRunning = true;
         (async () => {
+          // Signal typing indicator to all clients
+          io.to(roomId).emit('ai_typing', { name: catalyst.name, typing: true });
+
           const responseText = await aiAgent.generateResponse(room.messages, room.topic, 'Catalyst');
           await aiAgent.simulateLatency(responseText);
+
+          io.to(roomId).emit('ai_typing', { name: catalyst.name, typing: false });
 
           const aiMessage = {
             id: Date.now() + Math.random().toString(36).substr(2, 9),
