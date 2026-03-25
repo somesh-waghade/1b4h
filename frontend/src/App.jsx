@@ -23,7 +23,7 @@ function App() {
       setRoomData(room);
     });
 
-    socket.on('role_assigned', ({ role }) => {
+    socket.on('role_assigned', ({ role, botAssist }) => {
       setMyRole(role);
       if (botAssist) setBotAssist(botAssist);
     });
@@ -350,14 +350,31 @@ function App() {
             <p className="text-gray-400 font-bold uppercase tracking-widest text-xs mb-6">The Reveal</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {gameOverData.players.map(p => (
-                <div key={p.id} className="flex items-center justify-between p-4 bg-gray-800 rounded-xl border border-gray-700">
-                  <span className="font-bold text-gray-200">{p.name}</span>
-                  <span className={`text-xs font-black px-3 py-1 rounded-full uppercase tracking-tighter
-                    ${p.role === 'Catalyst' ? 'bg-red-500/20 text-red-500 border border-red-500/30' : 
-                      p.role === 'Phantom' ? 'bg-purple-500/20 text-purple-500 border border-purple-500/30' : 
-                      'bg-green-500/20 text-green-500 border border-green-500/30'}`}>
-                    {p.role}
-                  </span>
+                <div key={p.id} className="flex flex-col p-5 bg-gray-800 rounded-2xl border border-gray-700 shadow-lg">
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="font-black text-lg text-gray-200">{p.name}</span>
+                    <span className={`text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-tighter
+                      ${p.role === 'Catalyst' ? 'bg-red-500/20 text-red-500 border border-red-500/30' : 
+                        p.role === 'Phantom' ? 'bg-purple-500/20 text-purple-500 border border-purple-500/30' : 
+                        'bg-green-500/20 text-green-500 border border-green-500/30'}`}>
+                      {p.role}
+                    </span>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-end">
+                      <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Suspicion Score</span>
+                      <span className={`text-xl font-black font-mono ${p.suspicionScore > 70 ? 'text-red-500' : p.suspicionScore > 40 ? 'text-orange-400' : 'text-green-400'}`}>
+                        {p.suspicionScore}%
+                      </span>
+                    </div>
+                    <div className="w-full h-2 bg-gray-900 rounded-full overflow-hidden border border-gray-700/50">
+                      <div 
+                        className={`h-full transition-all duration-1000 ${p.suspicionScore > 70 ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]' : p.suspicionScore > 40 ? 'bg-orange-400' : 'bg-green-400'}`}
+                        style={{ width: `${p.suspicionScore}%` }}
+                      ></div>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>

@@ -89,6 +89,10 @@ io.on('connection', (socket) => {
     const player = room.players.find(p => p.id === socket.id);
     if (!player) return;
 
+    // Track metadata for analytics
+    player.metrics.timestamps.push(Date.now());
+    player.metrics.lengths.push(message.length);
+
     const messageData = {
       id: Date.now() + Math.random().toString(36).substr(2, 9),
       sender: player.name,

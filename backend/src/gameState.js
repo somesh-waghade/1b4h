@@ -1,6 +1,7 @@
 class GameState {
   constructor() {
-    this.rooms = new Map(); // roomId -> { phase, players, timer, votes, topic }
+    this.rooms = new Map(); // roomId -> { phase, players, timer, votes, topic, messages }
+    this.weights = { w1: 0.6, w2: 0.4 }; // Tunable weights for metadata analysis
     this.icebreakers = [
       "What's the worst food to eat on a first date?",
       "If you were a kitchen appliance, which one would you be and why?",
@@ -38,7 +39,17 @@ class GameState {
     if (room.phase !== 'lobby') return { error: 'Game already started' };
     if (room.players.some(p => p.name === name)) return { error: 'Name already taken' };
 
-    const player = { id: socketId, name, role: null, alive: true };
+    const player = { 
+      id: socketId, 
+      name, 
+      role: null, 
+      alive: true,
+      metrics: {
+        timestamps: [],
+        lengths: []
+      },
+      suspicionScore: 0
+    };
     room.players.push(player);
     return { room, player };
   }
@@ -120,7 +131,40 @@ class GameState {
     }
 
     room.phase = 'result';
+    
+    // Calculate final suspicion scores for everyone before sending
+    room.players.forEach(p => {
+      p.suspicionScore = this.calculateSuspicion(p.metrics);
+    });
+
     return { eliminatedPlayer, winner, players: room.players };
+  }
+
+  calculateSuspicion(metrics) {
+    const { timestamps, lengths } = metrics;
+    if (timestamps.length < 2) return 0;
+
+    // Latency (diffs between timestamps)
+    const latencies = [];
+    for (let i = 1; i < timestamps.length; i++) {
+      latencies.push(timestamps[i] - timestamps[i-1]);
+    }
+
+    const meanLat = latencies.reduce((a, b) => a + b, 0) / latencies.length;
+    const stdDevLat = Math.sqrt(latencies.map(x => Math.pow(x - meanLat, 2)).reduce((a, b) => a + b, 0) / latencies.length);
+
+    // Message Length Variance
+    const meanLen = lengths.reduce((a, b) => a + b, 0) / lengths.length;
+    const varLen = lengths.map(x => Math.pow(x - meanLen, 2)).reduce((a, b) => a + b, 0) / lengths.length;
+
+    // S = (w1 * stdDevLat) + (w2 * varLen)
+    // Normalized roughly for display (0-100)
+    // Lower variability = higher suspicion (bots are consistent)
+    const latScore = Math.max(0, 100 - (stdDevLat / 50)); 
+    const lenScore = Math.max(0, 100 - (Math.sqrt(varLen) * 2));
+
+    const finalScore = (this.weights.w1 * latScore) + (this.weights.w2 * lenScore);
+    return Math.round(Math.min(100, finalScore));
   }
 }
 
