@@ -119,7 +119,7 @@ function App() {
 
   // ── HOME ──────────────────────────────────────────────────
   if (screen === 'home') return (
-    <div className="relative min-h-screen bg-[#050810] text-white flex items-center justify-center p-6">
+    <div className="relative min-h-[100dvh] bg-[#050810] text-white flex items-center justify-center p-6">
       <div className="mesh-bg" />
       <div className="relative z-10 w-full max-w-md slide-up">
         {/* Logo */}
@@ -184,7 +184,7 @@ function App() {
 
   // ── QUEUE ─────────────────────────────────────────────────
   if (screen === 'queue') return (
-    <div className="relative min-h-screen bg-[#050810] text-white flex items-center justify-center p-6">
+    <div className="relative min-h-[100dvh] bg-[#050810] text-white flex items-center justify-center p-6">
       <div className="mesh-bg" />
       <div className="relative z-10 glass rounded-3xl p-12 text-center max-w-sm w-full slide-up">
         <div className="w-24 h-24 mx-auto mb-8 relative">
@@ -210,7 +210,7 @@ function App() {
   if (screen === 'lobby' && roomData) {
     const humans = roomData.players.filter(p => !p.isAI);
     return (
-      <div className="relative min-h-screen bg-[#050810] text-white flex items-center justify-center p-6">
+      <div className="relative min-h-[100dvh] bg-[#050810] text-white flex items-center justify-center p-6">
         <div className="mesh-bg" />
         <div className="relative z-10 glass rounded-3xl p-10 w-full max-w-lg slide-up">
           <div className="text-center mb-8">
@@ -247,12 +247,12 @@ function App() {
     const secs = String(timeLeft % 60).padStart(2, '0');
     const isLow = timeLeft < 30;
     return (
-      <div className="relative min-h-screen bg-[#050810] text-white fade-in" style={{display:'flex',flexDirection:'column'}}>
+      <div className="relative min-h-[100dvh] bg-[#050810] text-white fade-in flex flex-col">
         <div className="mesh-bg"/>
-        <div className="relative z-10 flex flex-col md:flex-row gap-4 p-4 h-screen max-h-screen overflow-hidden">
+        <div className="relative z-10 flex flex-col md:flex-row gap-4 p-4 h-[100dvh] max-h-[100dvh] overflow-hidden">
 
           {/* Sidebar */}
-          <div className="glass rounded-2xl p-5 md:w-64 shrink-0 flex flex-col gap-5">
+          <div className="glass rounded-2xl p-5 md:w-64 shrink-0 flex flex-col gap-4 overflow-y-auto">
             {/* Timer */}
             <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5">
               <div>
@@ -375,9 +375,9 @@ function App() {
 
   // ── VOTING ────────────────────────────────────────────────
   if (screen === 'voting') return (
-    <div className="relative min-h-screen bg-[#050810] text-white flex items-center justify-center p-6">
+    <div className="relative min-h-[100dvh] bg-[#050810] text-white flex items-center justify-center p-4">
       <div className="mesh-bg"/>
-      <div className="relative z-10 glass rounded-3xl p-10 w-full max-w-2xl text-center slide-up">
+      <div className="relative z-10 glass rounded-3xl p-6 sm:p-10 w-full max-w-2xl text-center slide-up">
         <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center text-3xl">🔍</div>
         <p className="text-xs font-black text-gray-600 uppercase tracking-[0.3em] mb-3">Time's Up</p>
         <h2 className="text-5xl font-black mb-3" style={{background:'linear-gradient(135deg,#f87171,#fb923c)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}}>
@@ -420,9 +420,9 @@ function App() {
   if (screen === 'result' && gameOverData) {
     const humanWon = gameOverData.winner.includes('Human');
     return (
-      <div className="relative min-h-screen bg-[#050810] text-white flex items-center justify-center p-6">
+      <div className="relative min-h-[100dvh] bg-[#050810] text-white flex items-center justify-center p-4">
         <div className="mesh-bg"/>
-        <div className="relative z-10 glass rounded-3xl p-10 w-full max-w-3xl slide-up">
+        <div className="relative z-10 glass rounded-3xl p-6 sm:p-10 w-full max-w-3xl slide-up">
           <div className="h-1 w-full rounded-full mb-10" style={{background:'linear-gradient(90deg,#4f46e5,#7c3aed,#ec4899)'}}/>
           <div className="text-center mb-10">
             <p className="text-xs font-black text-gray-600 uppercase tracking-[0.3em] mb-4">Game Over</p>
@@ -480,7 +480,7 @@ function App() {
 
   // Fallback
   return (
-    <div className="min-h-screen bg-[#050810] text-white flex items-center justify-center">
+    <div className="min-h-[100dvh] bg-[#050810] text-white flex items-center justify-center">
       <div className="mesh-bg"/>
       <div className="relative z-10 flex flex-col items-center gap-4 fade-in">
         <div className="w-10 h-10 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin"/>

@@ -1,6 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 /* ── Typography ─────────────────────────────────────────── */
 * { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
