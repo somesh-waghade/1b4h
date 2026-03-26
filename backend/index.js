@@ -156,12 +156,17 @@ io.on('connection', (socket) => {
       const lastAiIdx = room.messages.map(m => m.senderId).lastIndexOf('AI_CATALYST');
       const msgSinceLastReply = lastAiIdx === -1 ? 999 : room.messages.length - 1 - lastAiIdx;
 
-      // Base 35% chance, boosted to 75% if AI's name is mentioned
-      const nameMentioned = message.toLowerCase().includes(catalyst.name.toLowerCase());
-      const replyChance = nameMentioned ? 0.75 : 0.35;
+      // Make AI more talkative: base 55%, 75% for questions, 95% if name mentioned
+      const textLower = message.toLowerCase();
+      const nameMentioned = textLower.includes(catalyst.name.toLowerCase());
+      const isQuestion = textLower.includes('?');
+      
+      let replyChance = 0.55;
+      if (nameMentioned) replyChance = 0.95;
+      else if (isQuestion) replyChance = 0.75;
 
-      // Don't reply if the AI just spoke (< 2 messages ago)
-      const shouldReply = msgSinceLastReply >= 2 && Math.random() < replyChance;
+      // Allow reply if AI hasn't literally just spoken (cooldown of 1 instead of 2), or if specifically mentioned
+      const shouldReply = (msgSinceLastReply >= 1 || nameMentioned) && Math.random() < replyChance;
 
       if (shouldReply) {
         catalyst.isBotRunning = true;
