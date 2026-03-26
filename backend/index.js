@@ -1,10 +1,10 @@
+require('dotenv').config();
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
 const gameState = require('./src/gameState');
 const aiAgent = require('./src/aiAgent');
-require('dotenv').config();
 
 const app = express();
 app.use(cors());
