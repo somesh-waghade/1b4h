@@ -150,7 +150,7 @@ io.on('connection', (socket) => {
     if (catalyst && !catalyst.isBotRunning) {
       if (!room.messages) room.messages = [];
       room.messages.push(messageData);
-      if (room.messages.length > 10) room.messages.shift();
+      if (room.messages.length > 50) room.messages.shift();
 
       // Count how many messages since AI last spoke
       const lastAiIdx = room.messages.map(m => m.senderId).lastIndexOf('AI_CATALYST');
@@ -174,7 +174,7 @@ io.on('connection', (socket) => {
           // Signal typing indicator to all clients
           io.to(roomId).emit('ai_typing', { name: catalyst.name, typing: true });
 
-          const responseText = await aiAgent.generateResponse(room.messages, room.topic, 'Catalyst');
+          const responseText = await aiAgent.generateResponse(room.messages, room.topic, catalyst.name);
           await aiAgent.simulateLatency(responseText);
 
           io.to(roomId).emit('ai_typing', { name: catalyst.name, typing: false });

@@ -6,7 +6,7 @@ class AIAgent {
     this.apiUrl = 'https://api.groq.com/openai/v1/chat/completions';
   }
 
-  async generateResponse(history, topic, role) {
+  async generateResponse(history, topic, botName) {
     if (!this.apiKey || this.apiKey === 'your_groq_api_key_here') {
       console.warn('AI Agent: No API key found. Using fallback response.');
       return this.getFallbackResponse();
@@ -16,7 +16,8 @@ class AIAgent {
       {
         role: 'system',
         content: `You are a human player in a social deduction game called 1b4h. 
-        Your secret role is "Catalyst" (the AI), but you must behave EXACTLY like a human to avoid detection.
+        Your secret role is "Catalyst" (the AI). Your display name in the chat is "${botName}".
+        You must behave EXACTLY like a human to avoid detection.
         
         RULES FOR BEHAVIOR:
         1. Be casual, use lowercase often, and occasionally make minor typos.
