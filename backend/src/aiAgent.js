@@ -27,11 +27,20 @@ class AIAgent {
         5. If you are accused of being a bot, react naturally (deny it, act annoyed, or deflect humorously).
         6. Keep your responses short (1-2 sentences max).
         7. Only ask a question if it makes sense in the context. Do NOT end every single message with a question.
-        
-        Current Chat History:
-        ${history.map(m => `${m.sender}: ${m.text}`).join('\n')}`
+        8. The current room topic is: "${topic}"`
       }
     ];
+
+    // Map history to proper conversational roles so the LLM has true context
+    for (const msg of history) {
+      if (msg.sender === botName) {
+        messages.push({ role: 'assistant', content: msg.text });
+      } else {
+        // Use 'name' field for users (alphanumeric limit for OpenAI/Groq API)
+        const safeName = msg.sender.replace(/[^a-zA-Z0-9_-]/g, '').substring(0, 64) || 'User';
+        messages.push({ role: 'user', name: safeName, content: msg.text });
+      }
+    }
 
     try {
       const response = await axios.post(
