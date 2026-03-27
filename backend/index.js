@@ -174,7 +174,12 @@ io.on('connection', (socket) => {
           // Signal typing indicator to all clients
           io.to(roomId).emit('ai_typing', { name: catalyst.name, typing: true });
 
-          const responseText = await aiAgent.generateResponse(room.messages, room.topic, catalyst.name);
+          let responseText = await aiAgent.generateResponse(room.messages, room.topic, catalyst.name);
+          
+          // Safety: Strip the bot's own name if the LLM accidentally prepends it (e.g. "Rahul: Hello" -> "Hello")
+          const nameRegex = new RegExp(`^${catalyst.name}:\\s*`, 'i');
+          responseText = responseText.replace(nameRegex, '').trim();
+
           await aiAgent.simulateLatency(responseText);
 
           io.to(roomId).emit('ai_typing', { name: catalyst.name, typing: false });
