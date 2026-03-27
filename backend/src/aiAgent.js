@@ -46,7 +46,7 @@ class AIAgent {
       const response = await axios.post(
         this.apiUrl,
         {
-          model: 'llama3-8b-8192',
+          model: 'llama-3.1-8b-instant',
           messages: messages,
           temperature: 0.95,
           frequency_penalty: 0.7,
