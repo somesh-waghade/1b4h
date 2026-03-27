@@ -66,7 +66,7 @@ class GameState {
     if (!room) return;
     // Remove any existing AI first (clean state on restart)
     room.players = room.players.filter(p => !p.isAI);
-    const aiNames = ['Aria', 'Nova', 'Echo', 'Zephyr', 'Cypher'];
+    const aiNames = ['Rahul', 'Aditi', 'Karan', 'Sneha', 'Vikram', 'Priya', 'Rohan', 'Neha'];
     const aiName = aiNames[Math.floor(Math.random() * aiNames.length)];
     const aiPlayer = {
       id: 'AI_CATALYST',
