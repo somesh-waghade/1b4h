@@ -11,6 +11,12 @@ app.use(cors());
 app.use(express.json());
 
 const server = http.createServer(app);
+
+// Root route for health check and deployment verification
+app.get('/', (req, res) => {
+  res.send('1b4h Backend is running!');
+});
+
 const io = new Server(server, {
   cors: { origin: '*', methods: ['GET', 'POST'] }
 });
