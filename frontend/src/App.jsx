@@ -46,8 +46,8 @@ function App() {
   const [gameOverData, setGameOverData] = useState(null);
   const [queuePosition, setQueuePosition] = useState(0);
   const [error, setError]         = useState('');
-  const [isAiTyping, setIsAiTyping] = useState(false);
-  const [aiTypingName, setAiTypingName] = useState('');
+  const [typingPlayers, setTypingPlayers] = useState({});
+  const typingTimeoutRef = useRef(null);
   const chatBottomRef = useRef(null);
 
   useEffect(() => {
@@ -62,12 +62,27 @@ function App() {
     socket.on('game_started', ({ room, topic: t }) => {
       setRoomData(room); setTopic(t); setScreen('discussion');
     });
+    socket.on('player_typing', ({ id, name: n, isTyping }) => {
+      setTypingPlayers(prev => {
+        const next = { ...prev };
+        if (isTyping) next[id] = n; else delete next[id];
+        return next;
+      });
+    });
     socket.on('ai_typing', ({ name: n, typing }) => {
-      setIsAiTyping(typing);
-      if (typing) setAiTypingName(n);
+      setTypingPlayers(prev => {
+        const next = { ...prev };
+        if (typing) next['AI_CATALYST'] = n; else delete next['AI_CATALYST'];
+        return next;
+      });
     });
     socket.on('new_message', (msg) => {
-      setIsAiTyping(false);
+      setTypingPlayers(prev => {
+        const next = { ...prev };
+        delete next['AI_CATALYST'];
+        delete next[msg.senderId];
+        return next;
+      });
       setMessages(prev => [...prev, msg]);
     });
     socket.on('timer_update', (time) => setTimeLeft(time));
@@ -84,7 +99,7 @@ function App() {
 
   useEffect(() => {
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isAiTyping]);
+  }, [messages, typingPlayers]);
 
   const handleQuickPlay = (e) => {
     e.preventDefault();
@@ -330,7 +345,9 @@ function App() {
                     );
                   })
               }
-              {isAiTyping && <TypingIndicator name={aiTypingName} />}
+              {Object.entries(typingPlayers).map(([id, name]) => (
+                id !== socket.id && <TypingIndicator key={id} name={name} />
+              ))}
               <div ref={chatBottomRef} />
             </div>
 
@@ -358,7 +375,18 @@ function App() {
                   className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-indigo-500/50 transition-all text-sm font-medium text-white placeholder-gray-700"
                   placeholder="Type a message..."
                   value={inputText}
-                  onChange={e => setInputText(e.target.value)}
+                  onChange={e => {
+                    setInputText(e.target.value);
+                    if (e.target.value.trim() !== '') {
+                      socket.emit('typing', { roomId, isTyping: true });
+                      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+                      typingTimeoutRef.current = setTimeout(() => {
+                        socket.emit('typing', { roomId, isTyping: false });
+                      }, 2000);
+                    } else {
+                      socket.emit('typing', { roomId, isTyping: false });
+                    }
+                  }}
                 />
                 <button type="submit" disabled={!inputText.trim()}
                   className="btn-glow px-5 rounded-xl font-bold transition-all disabled:opacity-30 text-sm text-white"

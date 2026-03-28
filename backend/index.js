@@ -125,6 +125,15 @@ io.on('connection', (socket) => {
   });
 
   // ─── CHAT ────────────────────────────────────────────────────
+  socket.on('typing', ({ roomId, isTyping }) => {
+    const room = gameState.getRoom(roomId);
+    if (!room) return;
+    const player = room.players.find(p => p.id === socket.id);
+    if (player) {
+      socket.to(roomId).emit('player_typing', { id: socket.id, name: player.name, isTyping });
+    }
+  });
+
   socket.on('send_message', ({ roomId, message }) => {
     const room = gameState.getRoom(roomId);
     if (!room) return;
