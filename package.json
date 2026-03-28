@@ -1,0 +1,7 @@
+{
+  "name": "1b4h-root",
+  "private": true,
+  "scripts": {
+    "build": "npm run build --prefix frontend"
+  }
+}
