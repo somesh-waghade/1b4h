@@ -2,7 +2,7 @@
 
 A real-time multiplayer social deduction game. One player is secretly an AI (Catalyst). Can you tell who's human?
 
-## Roles
+## 🎭 Roles
 
 | Role | Who | Goal |
 |------|-----|------|
@@ -10,61 +10,51 @@ A real-time multiplayer social deduction game. One player is secretly an AI (Cat
 | **Phantom** | Human | Act like a bot. Draw votes away from the AI. |
 | **Innocent** | Human (×3) | Find the AI and vote it out. |
 
-## How It Works
+## 🕹️ How It Works
 
-1. 5 players join a room with a shared **Room Code**
-2. A random **Icebreaker Topic** kicks off the chat
-3. Players chat freely for **60 seconds**
-4. Everyone **votes** to eliminate who they think is the bot
-5. The **reveal** shows true roles + a **Suspicion Score** for each player
+1. **Quick Play**: Join the public queue or host a private room.
+2. **Icebreaker**: A random topic (e.g., "Is a hotdog a sandwich?") kicks off the chat.
+3. **Discussion**: Chat freely for **5 minutes**. 
+4. **Interrogation**: The AI (Catalyst) has an Indian college student persona, speaks Hinglish, makes typos, and uses gamer slang to blend in.
+5. **Voting**: Everyone votes to eliminate who they think is the bot.
+6. **The Reveal**: Discover true roles and see the **Suspicion Score** analytics.
 
-## Stack
+## 🛠️ Tech Stack
 
+- **Frontend**: React (Vite), Tailwind CSS v4, Socket.io
 - **Backend**: Node.js, Express, Socket.io
-- **Frontend**: React (Vite), TailwindCSS
-- **AI Agent**: Groq API (Llama-3 8B) with humanized latency simulation
+- **AI Brain**: Groq API (Llama-3.1 8B) with native context mapping & humanized typing latency.
 
-## Getting Started
+## 🚀 Getting Started
 
 ### Prerequisites
 - Node.js v18+
-- A free [Groq API key](https://console.groq.com/)
+- [Groq API key](https://console.groq.com/)
 
-### Backend
-
+### 1. Backend Setup
 ```bash
 cd backend
-cp .env.example .env   # Add your GROQ_API_KEY
 npm install
-npm run dev            # Starts on http://localhost:3001
+# Create .env and add GROQ_API_KEY
+npm run dev
 ```
 
-### Frontend
-
+### 2. Frontend Setup
 ```bash
 cd frontend
 npm install
-npm run dev            # Starts on http://localhost:5173
+npm run dev
 ```
 
-Open **5 browser tabs** (or use multiple devices), use the same Room Code, and the game starts automatically.
+Open multiple browser tabs or invite friends to join your room code!
 
-## Behavioral Analytics
+## 📊 Behavioral Analytics
 
-After each game, a **Suspicion Score** is calculated for every player:
+Each player receives a **Suspicion Score** calculated using:
+`S = (0.6 × σ_t) + (0.4 × Δ_c)`
 
-```
-S = (0.6 × σ_t) + (0.4 × Δ_c)
-```
+- `σ_t` — Latency deviation (Is your typing speed too consistent?)
+- `Δ_c` — Message variance (Is your sentence structure too uniform?)
 
-- `σ_t` — Standard deviation of response latency (low = suspiciously consistent)
-- `Δ_c` — Variance in message length (low = suspiciously uniform)
-
-High score → likely bot-like behavior. Low score → convincingly human.
-
-## Environment Variables
-
-```env
-GROQ_API_KEY=your_key_here
-PORT=3001
-```
+## 📄 Documentation
+Check the `docs/` folder for technical deep-dives into [Architecture](./docs/architecture.md), [AI Mechanics](./docs/ai_mechanics.md), and [Deployment](./docs/deployment.md).
