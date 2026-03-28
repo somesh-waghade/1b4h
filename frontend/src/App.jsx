@@ -2,7 +2,9 @@ import { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 import './index.css';
 
-const socket = io('http://localhost:3001');
+// Use the deployed backend URL if available, otherwise default to local development
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+const socket = io(BACKEND_URL);
 
 // ── Typing Indicator component ────────────────────────────
 function TypingIndicator({ name }) {
