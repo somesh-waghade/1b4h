@@ -1,5 +1,7 @@
 # 1b4h — 1 Bot, 4 Humans
 
+**Live Demo: [https://1b4h-vercel.vercel.app/](https://1b4h-vercel.vercel.app/)**
+
 A real-time multiplayer social deduction game. One player is secretly an AI (Catalyst). Can you tell who's human?
 
 ## Roles
