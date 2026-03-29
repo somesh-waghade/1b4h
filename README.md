@@ -58,5 +58,4 @@ Each player receives a **Suspicion Score** calculated using:
 - `σ_t` — Latency deviation (Is your typing speed too consistent?)
 - `Δ_c` — Message variance (Is your sentence structure too uniform?)
 
-## Documentation
-Check the `docs/` folder for technical deep-dives into [Architecture](./docs/architecture.md), [AI Mechanics](./docs/ai_mechanics.md), and [Deployment](./docs/deployment.md).
+
